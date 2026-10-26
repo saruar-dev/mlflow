@@ -53,10 +53,9 @@ inspecting it. Keep additional issue queries scoped to open `nightly` issues.
 When using `-f` query parameters, specify `--method GET`; otherwise `gh api`
 defaults to POST. Read the saved files instead of refetching the same endpoint.
 
-Use `run.name` as `workflow` and `job.name` as `job`; construct attempt-pinned job
-URLs following the schema. Use [analyze-ci](../analyze-ci/SKILL.md) once for all
-failed-job URLs. Read the failed-step logs and package changes, then pass these
-cached paths and the saved API files to investigators instead of fetching them again.
+Use [analyze-ci](../analyze-ci/SKILL.md) once for all failed-job URLs. Read the
+failed-step logs and package changes, then pass these cached paths and the saved
+API files to investigators instead of fetching them again.
 
 ## Investigate
 

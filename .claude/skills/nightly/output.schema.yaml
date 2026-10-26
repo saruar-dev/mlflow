@@ -11,15 +11,18 @@ properties:
 $defs:
   job:
     type: object
-    required: [workflow, job, url]
+    required: [workflow_name, job_name, job_run_url]
     properties:
-      workflow:
+      workflow_name:
+        description: Name of the GitHub Actions run (`run.name`).
         type: string
         minLength: 1
-      job:
+      job_name:
+        description: Name of the failed job (`job.name`).
         type: string
         minLength: 1
-      url:
+      job_run_url:
+        description: Attempt-pinned URL of the failed GitHub Actions job.
         type: string
         pattern: '^https://github\.com/mlflow/mlflow/actions/runs/[0-9]+/attempts/[0-9]+/job/[0-9]+$'
   group:

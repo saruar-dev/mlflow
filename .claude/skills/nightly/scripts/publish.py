@@ -25,7 +25,10 @@ def issue_body(group: dict[str, Any]) -> str:
     if group["uncertainties"]:
         uncertainties = "\n".join(f"- {item}" for item in group["uncertainties"])
         body += f"\n\n### Uncertainties\n\n{uncertainties}"
-    jobs = "\n".join(f"- [{job['workflow']} / {job['job']}]({job['url']})" for job in group["jobs"])
+    jobs = "\n".join(
+        f"- [{job['workflow_name']} / {job['job_name']}]({job['job_run_url']})"
+        for job in group["jobs"]
+    )
     return f"{body}\n\n### CI jobs\n\n{jobs}"
 
 
