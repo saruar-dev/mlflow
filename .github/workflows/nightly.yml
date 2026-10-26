@@ -24,18 +24,18 @@ permissions: {}
 cache-mode: none
 
 jobs:
-  close_stale_issues:
+  pre_analyze:
     if: >-
       github.repository == 'mlflow/mlflow' &&
-      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
-      (github.event_name == 'schedule' ||
-       (github.event_name == 'workflow_dispatch' && !inputs.dry_run))
+      (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) ||
+       (github.event_name == 'workflow_dispatch' && inputs.dry_run))
     runs-on: ubuntu-slim
     timeout-minutes: 10
     permissions:
       issues: write
     steps:
       - name: Close old nightly issues
+        if: github.event_name == 'schedule' || !inputs.dry_run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -48,14 +48,7 @@ jobs:
           done < "$RUNNER_TEMP/stale-nightly-issues.txt"
 
   analyze:
-    needs: close_stale_issues
-    if: >-
-      !cancelled() &&
-      (needs.close_stale_issues.result == 'success' ||
-       (inputs.dry_run && needs.close_stale_issues.result == 'skipped')) &&
-      github.repository == 'mlflow/mlflow' &&
-      (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) ||
-       (github.event_name == 'workflow_dispatch' && inputs.dry_run))
+    needs: pre_analyze
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
