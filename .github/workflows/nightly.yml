@@ -24,8 +24,35 @@ permissions: {}
 cache-mode: none
 
 jobs:
-  analyze:
+  close_stale_issues:
     if: >-
+      github.repository == 'mlflow/mlflow' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      (github.event_name == 'schedule' ||
+       (github.event_name == 'workflow_dispatch' && !inputs.dry_run))
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    steps:
+      - name: Close inactive nightly issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          gh api --paginate 'repos/mlflow/mlflow/issues?state=open&labels=nightly&per_page=100' \
+            --jq ".[] | select(has(\"pull_request\") | not) | select(.updated_at <= \"$cutoff\") | .number" \
+            > "$RUNNER_TEMP/stale-nightly-issues.txt"
+          while IFS= read -r issue_number; do
+            gh issue close "$issue_number" --repo mlflow/mlflow --reason 'not planned'
+          done < "$RUNNER_TEMP/stale-nightly-issues.txt"
+
+  analyze:
+    needs: close_stale_issues
+    if: >-
+      !cancelled() &&
+      (needs.close_stale_issues.result == 'success' ||
+       (inputs.dry_run && needs.close_stale_issues.result == 'skipped')) &&
       github.repository == 'mlflow/mlflow' &&
       (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) ||
        (github.event_name == 'workflow_dispatch' && inputs.dry_run))
