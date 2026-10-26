@@ -23,12 +23,13 @@ included. Fetch each workflow's latest scheduled run and the jobs for each faile
 run. `--slurp` keeps each paginated response in one valid JSON file:
 
 ```bash
-workflows=(cross-version-tests.yml)
+workflow_files=(cross-version-tests.yml)
 mkdir -p "$out_dir/inputs"
 rm -f "$out_dir"/inputs/*-latest-run.json "$out_dir"/inputs/*-jobs.json
-for workflow in "${workflows[@]}"; do
-  run_file="$out_dir/inputs/$workflow-latest-run.json"
-  gh api "repos/mlflow/mlflow/actions/workflows/$workflow/runs?event=schedule&per_page=1" \
+for workflow_file in "${workflow_files[@]}"; do
+  workflow_stem=${workflow_file%.*}
+  run_file="$out_dir/inputs/$workflow_stem-latest-run.json"
+  gh api "repos/mlflow/mlflow/actions/workflows/$workflow_file/runs?event=schedule&per_page=1" \
     > "$run_file"
   jq '.workflow_runs[0] | {id, name, run_attempt, head_sha, status, conclusion}' \
     "$run_file"
@@ -37,11 +38,12 @@ for workflow in "${workflows[@]}"; do
   fi
   run_id=$(jq -er '.workflow_runs[0].id' "$run_file")
   attempt=$(jq -er '.workflow_runs[0].run_attempt' "$run_file")
+  jobs_file="$out_dir/inputs/$workflow_stem-jobs.json"
   gh api --paginate --slurp \
     "repos/mlflow/mlflow/actions/runs/$run_id/attempts/$attempt/jobs?per_page=30" \
-    > "$out_dir/inputs/$workflow-jobs.json"
+    > "$jobs_file"
   jq '.[] | .jobs[] | select(.conclusion | IN("failure", "timed_out", "cancelled", "action_required", "startup_failure")) | {id, name, conclusion}' \
-    "$out_dir/inputs/$workflow-jobs.json"
+    "$jobs_file"
 done
 ```
 

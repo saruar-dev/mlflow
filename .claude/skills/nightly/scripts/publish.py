@@ -49,7 +49,7 @@ def publish(report: dict[str, Any], *, apply: bool = False) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Publish nightly CI findings")
+    parser = argparse.ArgumentParser(description="Preview or publish nightly issues")
     parser.add_argument("report", type=Path)
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
