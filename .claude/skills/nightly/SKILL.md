@@ -73,7 +73,7 @@ fetching them again.
 2. For each remaining group, call `Agent` (`Task` in some sessions) with
    `subagent_type: general-purpose` and `isolation: worktree`, at most three
    concurrently. Pass its jobs, run head SHA, cached logs, and candidate issues.
-   Wait for its findings and uncertainties, then choose the verdict and title.
+   Wait for its findings, then choose the verdict and title.
 3. Inside each isolated worktree, fetch and check out the run's head SHA before
    investigating. Workers may change code and run focused reproductions there.
    Check relevant upstream projects' issues, pull requests, and commits for
@@ -83,13 +83,13 @@ fetching them again.
 
 Keep the coordinator checkout unchanged. Do not commit, push, or write to GitHub.
 Use a 30-minute budget, reserving the last five minutes for reporting. A `new`
-verdict requires a completed isolated investigator; use `uncertain` for incomplete work.
+verdict requires a completed isolated investigator; use `uncertain` when evidence
+is insufficient or the investigation is incomplete.
 
 ## Report and validate
 
 Reconcile findings across groups and cover every non-transient failed job. Separate
 causes may share a job; several jobs may share one cause. Omit transient failures.
-Keep unverified explanations in `uncertainties`.
 
 Write `$out_dir/report.json`, then validate it and fix any errors before finishing:
 

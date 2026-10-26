@@ -27,7 +27,7 @@ $defs:
         pattern: '^https://github\.com/mlflow/mlflow/actions/runs/[0-9]+/attempts/[0-9]+/job/[0-9]+$'
   group:
     type: object
-    required: [verdict, summary, jobs, evidence, uncertainties]
+    required: [verdict, summary, jobs, evidence]
     properties:
       verdict:
         # new: investigated problem without a matching open nightly issue.
@@ -46,12 +46,6 @@ $defs:
       evidence:
         type: array
         minItems: 1
-        items:
-          type: string
-          minLength: 1
-      uncertainties:
-        # Unverified mechanisms and limits of the investigation.
-        type: array
         items:
           type: string
           minLength: 1
