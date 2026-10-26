@@ -19,29 +19,19 @@ overwriting any files from an earlier invocation, and reuse the saved responses
 throughout the investigation.
 
 The monitored workflows are listed below; currently only cross-version tests are
-included. Fetch each workflow's latest scheduled run, then inspect its conclusion
-from the saved file:
+included. Fetch each workflow's latest scheduled run and the jobs for each failed
+run. `--slurp` keeps each paginated response in one valid JSON file:
 
 ```bash
 workflows=(cross-version-tests.yml)
 mkdir -p "$out_dir/api"
 rm -f "$out_dir"/api/*-latest-run.json "$out_dir"/api/*-jobs.json
 for workflow in "${workflows[@]}"; do
+  run_file="$out_dir/api/$workflow-latest-run.json"
   gh api "repos/mlflow/mlflow/actions/workflows/$workflow/runs?event=schedule&per_page=1" \
-    > "$out_dir/api/$workflow-latest-run.json"
+    > "$run_file"
   jq '.workflow_runs[0] | {id, name, run_attempt, head_sha, status, conclusion}' \
-    "$out_dir/api/$workflow-latest-run.json"
-done
-```
-
-If no monitored run concluded `failure`, write `{"groups": []}` and validate it.
-Otherwise, fetch all jobs for each failed run. `--slurp` keeps each paginated
-response in one valid JSON file:
-
-```bash
-for run_file in "$out_dir"/api/*-latest-run.json; do
-  workflow=${run_file##*/}
-  workflow=${workflow%-latest-run.json}
+    "$run_file"
   if [ "$(jq -r '.workflow_runs[0].conclusion // empty' "$run_file")" != failure ]; then
     continue
   fi
@@ -55,7 +45,9 @@ for run_file in "$out_dir"/api/*-latest-run.json; do
 done
 ```
 
-Fetch open `nightly` issues once, then inspect the saved response:
+If no monitored run concluded `failure`, write `{"groups": []}`, validate it,
+and finish. Otherwise, fetch open `nightly` issues once, then inspect the saved
+response:
 
 ```bash
 gh api --paginate --slurp 'repos/mlflow/mlflow/issues?state=open&labels=nightly&per_page=100' \
