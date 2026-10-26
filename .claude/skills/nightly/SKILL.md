@@ -78,8 +78,10 @@ fetching them again.
    Wait for its findings and uncertainties, then choose the verdict and title.
 3. Inside each isolated worktree, fetch and check out the run's head SHA before
    investigating. Workers may change code and run focused reproductions there.
-   Record the verified SHA, relevant runtime and dependency versions, commands,
-   and outcomes.
+   Check relevant upstream projects' issues, pull requests, and commits for
+   matching regressions or fixes, especially for cross-version failures. Record
+   the verified SHA, relevant runtime and dependency versions, upstream URLs and
+   their connection to the failure, commands, and outcomes.
 
 Keep the coordinator checkout unchanged. Do not commit, push, or write to GitHub.
 Use a 30-minute budget, reserving the last five minutes for reporting. A `new`
