@@ -54,6 +54,11 @@ while IFS= read -r workflow; do
   jq '.[] | .jobs[] | select(.conclusion | IN("failure", "timed_out", "cancelled", "action_required", "startup_failure")) | {id, name, conclusion}' \
     "$out_dir/api/$workflow-jobs.json"
 done < "$out_dir/monitored-workflows.txt"
+```
+
+Inspect the saved open-issue response:
+
+```bash
 jq '.[] | .[] | select(has("pull_request") | not) | {number, title, body, html_url}' \
   "$out_dir/api/open-nightly-issues.json"
 ```
