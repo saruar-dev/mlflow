@@ -25,7 +25,7 @@ from the saved file:
 ```bash
 workflows=(cross-version-tests.yml)
 mkdir -p "$out_dir/api"
-printf '%s\n' "${workflows[@]}" > "$out_dir/monitored-workflows.txt"
+rm -f "$out_dir"/api/*-latest-run.json "$out_dir"/api/*-jobs.json
 for workflow in "${workflows[@]}"; do
   gh api "repos/mlflow/mlflow/actions/workflows/$workflow/runs?event=schedule&per_page=1" \
     > "$out_dir/api/$workflow-latest-run.json"
@@ -39,8 +39,9 @@ Otherwise, fetch all jobs for each failed run. `--slurp` keeps each paginated
 response in one valid JSON file:
 
 ```bash
-while IFS= read -r workflow; do
-  run_file="$out_dir/api/$workflow-latest-run.json"
+for run_file in "$out_dir"/api/*-latest-run.json; do
+  workflow=${run_file##*/}
+  workflow=${workflow%-latest-run.json}
   if [ "$(jq -r '.workflow_runs[0].conclusion // empty' "$run_file")" != failure ]; then
     continue
   fi
@@ -51,7 +52,7 @@ while IFS= read -r workflow; do
     > "$out_dir/api/$workflow-jobs.json"
   jq '.[] | .jobs[] | select(.conclusion | IN("failure", "timed_out", "cancelled", "action_required", "startup_failure")) | {id, name, conclusion}' \
     "$out_dir/api/$workflow-jobs.json"
-done < "$out_dir/monitored-workflows.txt"
+done
 ```
 
 Fetch open `nightly` issues once, then inspect the saved response:
