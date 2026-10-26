@@ -101,6 +101,7 @@ from mlflow.gateway.budget import maybe_refresh_budget_policies
 from mlflow.gateway.budget_tracker import get_budget_tracker
 from mlflow.gateway.constants import GATEWAY_DISABLED_MESSAGE
 from mlflow.gateway.utils import is_valid_endpoint_name
+from mlflow.genai.discovery.schedule import scheduled_detection_available
 from mlflow.genai.label_schemas.label_schemas import LabelSchemaType, _input_from_proto
 from mlflow.genai.review_queues import ReviewItemType, ReviewQueueType, ReviewStatus
 from mlflow.genai.review_queues.validation import validate_item_ids_for_attach
@@ -2721,10 +2722,10 @@ def create_promptlab_run_handler():
 @_disable_if_artifacts_presigned_only(upload=True)
 def upload_artifact_handler():
     args = request.args
-    run_uuid = args.get("run_uuid")
-    if not run_uuid:
+    run_id = args.get("run_id") or args.get("run_uuid")
+    if not run_id:
         raise MlflowException(
-            message="Request must specify run_uuid.",
+            message="Request must specify run_id or run_uuid.",
             error_code=INVALID_PARAMETER_VALUE,
         )
     path = args.get("path")
@@ -2754,7 +2755,7 @@ def upload_artifact_handler():
             error_code=INVALID_PARAMETER_VALUE,
         )
 
-    run = _get_tracking_store().get_run(run_uuid)
+    run = _get_tracking_store().get_run(run_id)
     artifact_dir = run.info.artifact_uri
 
     basename = posixpath.basename(path)
@@ -5716,6 +5717,7 @@ def _invoke_issue_detection_handler():
             "experiment_id": [_assert_required, _assert_string],
             "trace_ids": [_assert_required, _assert_array, _assert_item_type_string],
             "categories": [_assert_required, _assert_array],
+            "instructions": [_assert_string],
             "provider": [_assert_required, _assert_string],
             "model": [_assert_string],
             "secret_id": [_assert_string],
@@ -5727,6 +5729,7 @@ def _invoke_issue_detection_handler():
     # Deduplicate while preserving order so a repeated trace_id is not fetched or analyzed twice.
     trace_ids = list(dict.fromkeys(request_json.get("trace_ids", [])))
     categories = request_json.get("categories", [])
+    instructions = request_json.get("instructions")
     provider = request_json.get("provider")
     model = request_json.get("model")
     secret_id = request_json.get("secret_id")
@@ -5799,6 +5802,7 @@ def _invoke_issue_detection_handler():
             "categories": categories,
             "run_id": run_id,
             "model": model_name,
+            "instructions": instructions,
         },
         extra_envs=credentials,
     )
@@ -7721,6 +7725,20 @@ def build_server_info_payload() -> dict[str, Any]:
         else:
             store_type = None
 
+    # Whether a saved issue-detection schedule would actually run here. A client asks so it can
+    # say the schedule cannot run instead of offering a switch that silently does nothing. This
+    # response is served before login, so an unavailable capability reports as False rather than
+    # failing the whole payload every client reads at startup.
+    try:
+        scheduled_issue_detection_enabled = scheduled_detection_available()
+    except Exception:
+        _logger.debug(
+            "Failed to resolve scheduled issue detection availability while serving server-info; "
+            "defaulting to disabled.",
+            exc_info=True,
+        )
+        scheduled_issue_detection_enabled = False
+
     multipart_uploads_enabled = False
     multipart_downloads_enabled = False
     if _is_serving_proxied_artifacts():
@@ -7763,6 +7781,7 @@ def build_server_info_payload() -> dict[str, Any]:
         SERVER_INFO_MODEL_ARTIFACT_PRESIGNED_DOWNLOADS_SUPPORTED: presigned_transfers_supported,
         SERVER_INFO_FEATURES_ENABLED: {
             "gateway": MLFLOW_ENABLE_AI_GATEWAY.get(),
+            "scheduled_issue_detection": scheduled_issue_detection_enabled,
         },
         SERVER_INFO_TRACKING_AUTH: MLFLOW_SERVER_INFO_TRACKING_AUTH.get() or "",
         SERVER_INFO_ARTIFACTS_PRESIGNED_ONLY: MLFLOW_ARTIFACTS_PRESIGNED_ONLY.get(),
