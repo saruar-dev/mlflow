@@ -165,7 +165,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  execute:
+  publish:
     needs: analyze
     runs-on: ubuntu-slim
     timeout-minutes: 10
@@ -203,12 +203,4 @@ jobs:
             args+=(--apply)
           fi
           python .claude/skills/nightly/scripts/publish.py \
-            /tmp/nightly-bundle/report.json "${args[@]}" > /tmp/nightly-plan.json
-          cat /tmp/nightly-plan.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: nightly-plan-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/nightly-plan.json
-          if-no-files-found: ignore
-          retention-days: 7
+            /tmp/nightly-bundle/report.json "${args[@]}"
