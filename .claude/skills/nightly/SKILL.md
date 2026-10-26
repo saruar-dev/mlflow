@@ -58,7 +58,6 @@ jq '.[] | .[] | select(has("pull_request") | not) | {number, title, body, html_u
   "$out_dir/inputs/open-nightly-issues.json"
 ```
 
-Keep additional `mlflow/mlflow` issue queries scoped to open `nightly` issues.
 When using `-f` query parameters, specify `--method GET`; otherwise `gh api`
 defaults to POST. Read these saved files instead of refetching their endpoints.
 
