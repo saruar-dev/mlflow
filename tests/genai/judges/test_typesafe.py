@@ -116,6 +116,10 @@ def test_direct_bool_invocation_uses_native_evaluation(monkeypatch):
             "http://127.0.0.1:8080/v1",
             "http://127.0.0.1:8080/v1/systemone",
         ),
+        (
+            "https://console.nace.ai/v1",
+            "https://console.nace.ai/v1/systemone",
+        ),
     ],
 )
 def test_direct_invocation_supports_custom_base_url_and_headers(

@@ -120,6 +120,27 @@ custom_judge = make_judge(
 
 For a `gateway:/` judge, configure the upstream API base and credentials on the AI Gateway connection instead. Judge-level `base_url` and `extra_headers` do not override a Gateway endpoint's saved connection.
 
+### Nace Drex Max
+
+[Nace](https://console.nace.ai/docs/drex/guides/drex-max) serves its `drex-max` decision model through a System One-compatible endpoint. Set `base_url` to `https://console.nace.ai/v1` and send a Nace API key in the `Authorization` header:
+
+```python
+import os
+
+from mlflow.genai.judges import make_judge
+
+drex_judge = make_judge(
+    name="answer_helpfulness",
+    instructions="Answer yes or no: Does {{ outputs }} answer {{ inputs }}?",
+    model="typesafe:/drex-max",
+    feedback_value_type=bool,
+    base_url="https://console.nace.ai/v1",
+    extra_headers={"Authorization": f"Bearer {os.environ['NACE_API_KEY']}"},
+)
+```
+
+The same `bool` and finite `Literal[...]` output types apply. MLflow's bundled model catalog lists `drex-max` under the `typesafe` provider with Nace's [published pricing](https://console.nace.ai/docs/drex/reference/pricing), so catalog-based cost lookups cover it without extra configuration.
+
 ## Limitations
 
 TypeSafe judge models in MLflow currently have these limits:

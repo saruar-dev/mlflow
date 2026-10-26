@@ -78,10 +78,13 @@ def test_typesafe_models_and_credentials(monkeypatch):
         "jev-latest",
         "jev-preview",
         "jev-1.13.0",
+        "drex-max",
     }
+    expected_input_cost_per_million = {"drex-max": 0.06}
     for model in models:
         assert model["mode"] == "evaluation"
-        assert model["input_cost_per_token"] == pytest.approx(0.042 / 1_000_000)
+        expected_input_cost = expected_input_cost_per_million.get(model["model"], 0.042)
+        assert model["input_cost_per_token"] == pytest.approx(expected_input_cost / 1_000_000)
         assert model["output_cost_per_token"] == 0
         assert model["supports_vision"] is False
         assert model["supports_function_calling"] is False
@@ -107,6 +110,15 @@ def test_typesafe_models_and_credentials(monkeypatch):
         custom_llm_provider="typesafe",
     )
     assert input_cost == pytest.approx(0.042)
+    assert output_cost == 0
+
+    input_cost, output_cost = cost_per_token(
+        model="drex-max",
+        prompt_tokens=1_000_000,
+        completion_tokens=0,
+        custom_llm_provider="typesafe",
+    )
+    assert input_cost == pytest.approx(0.06)
     assert output_cost == 0
 
 
