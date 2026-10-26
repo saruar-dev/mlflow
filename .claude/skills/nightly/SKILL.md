@@ -35,12 +35,10 @@ done
 ```
 
 If no monitored run concluded `failure`, write `{"groups": []}` and validate it.
-Otherwise, fetch all jobs for each failed run and fetch open `nightly` issues
-once. `--slurp` keeps each paginated response in one valid JSON file:
+Otherwise, fetch all jobs for each failed run. `--slurp` keeps each paginated
+response in one valid JSON file:
 
 ```bash
-gh api --paginate --slurp 'repos/mlflow/mlflow/issues?state=open&labels=nightly&per_page=100' \
-  > "$out_dir/api/open-nightly-issues.json"
 while IFS= read -r workflow; do
   run_file="$out_dir/api/$workflow-latest-run.json"
   if [ "$(jq -r '.workflow_runs[0].conclusion // empty' "$run_file")" != failure ]; then
@@ -56,9 +54,11 @@ while IFS= read -r workflow; do
 done < "$out_dir/monitored-workflows.txt"
 ```
 
-Inspect the saved open-issue response:
+Fetch open `nightly` issues once, then inspect the saved response:
 
 ```bash
+gh api --paginate --slurp 'repos/mlflow/mlflow/issues?state=open&labels=nightly&per_page=100' \
+  > "$out_dir/api/open-nightly-issues.json"
 jq '.[] | .[] | select(has("pull_request") | not) | {number, title, body, html_url}' \
   "$out_dir/api/open-nightly-issues.json"
 ```
